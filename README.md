@@ -169,7 +169,9 @@ Passing this study does not automatically make a candidate a production feature.
 
 Under construction...
 
-**TL;DR.** This section will use the same structure as Google Trends: a short reader-facing summary first, then a technical dropdown with the full validation details. The weather write-up is intentionally left as a scaffold for the teammate who owns that analysis.
+**TL;DR.** 
+
+...
 
 At a high level, weather is a different kind of signal from search data. Google Trends is mostly a demand/planning proxy; weather is more of a disruption proxy. The final version should explain what was tested, what survived, and how the surviving weather features fit into the broader forecasting pipeline.
 
