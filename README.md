@@ -1,5 +1,9 @@
 # Forecasting TSA Volume for Kalshi Markets
 
+> _This work represents a collaborative effort by members of [ML@P](https://mlpurdue.com/)._  
+> Project manager: [Eubene In](https://github.com/ubean-nn)  
+> Project members: [Manit Mahajan](https://github.com/manitm204), [Josh Kim](https://github.com/Jokimessi21), [Prabhat Mani James Nayagam](https://github.com/Thesavagecoder7784), [Brody Snyder](https://github.com/bsniddy), [Mofiyinfoluwa Orekoya](https://github.com/FakeTonyV2), with collaborative efforts from [Sungmin Park](https://github.com/sungmin0405)
+
 _This report is censored and anonymized to protect our proprietary data and pipeline. It shows the research process, the validation standard, and the kinds of signal families we are building around without exposing the features themselves, model configuration, execution thresholds, or order-sizing rules._
 
 <details>
@@ -24,7 +28,7 @@ What this report intentionally omits:
   <img src="./media/kalshi-img.png" width="400" alt="Kalshi" />
 </p>
 
-Kalshi is a prediction market for all sorts of things. Instead of buying shares of a company, people buy or sell contracts tied to a specific real-world outcome. A contract can be read as a market-implied probability: if people think an event is more likely, the "Yes" side becomes more expensive; if they think it is less likely, it becomes cheaper.
+[Kalshi](https://kalshi.com/) is a prediction market for all sorts of things. Instead of buying shares of a company, people buy or sell contracts tied to a specific real-world outcome. A contract can be read as a market-implied probability: if people think an event is more likely, the "Yes" side becomes more expensive; if they think it is less likely, it becomes cheaper.
 
 That makes this project a little different from just a normal forecasting assignment. We have to also estimate whether the market's view of a future travel outcome is too high, too low, or fairly priced after accounting for uncertainty.
 
@@ -125,11 +129,19 @@ Google Trends, a data source surrounding google search volume, can act as an ear
 
 We found certain Google Trends terms to be useful, but only after being heavily screened. A lot of travel searches move with TSA volume simply because both rise around the same times of year. The useful signals are the ones that still carry information after we remove the obvious calendar effects.
 
-![Trends Exploration Overview](charts/trends_exploration_overview.png)
+<!-- ![Trends Exploration Overview](charts/trends_exploration_overview.png) -->
+
+<p align="center">
+  <img src="./charts/trends_exploration_overview.png" width="800" alt="Trends Exploration Overview" />
+</p>
 
 The broad screen gave us a quick way to rank candidates and separate "this looks related" from "this might actually help the model."
 
-![Final Validated Signal Summary](charts/trend_correlation_final.png)
+<!-- ![Final Validated Signal Summary](charts/trend_correlation_final.png) -->
+
+<p align="center">
+  <img src="./charts/trend_correlation_final.png" width="800" alt="Final Validated Signal Summary" />
+</p>
 
 The final summary is intentionally anonymized. It shows which signals made it through the validation process without exposing the underlying query list or exact feature recipes.
 
@@ -147,15 +159,27 @@ The validation pass emphasized:
 - Directional stability after outlier handling.
 - Pearson/Spearman agreement as a sanity check against a few extreme observations driving the result.
 
-![Trends Exploration Heatmap](charts/trends_exploration_heatmap.png)
+<!-- ![Trends Exploration Heatmap](charts/trends_exploration_heatmap.png) -->
+
+<p align="center">
+  <img src="./charts/trends_exploration_heatmap.png" width="800" alt="Trends Exploration Heatmap" />
+</p>
 
 The heatmap was the first real filter. It helped us identify which candidates had a stable relationship across nearby lead/lag alignments and which ones only looked good at one isolated point.
 
-![Distributed Lag Profiles](charts/lag_profiles_core_signals.png)
+<!-- ![Distributed Lag Profiles](charts/lag_profiles_core_signals.png) -->
+
+<p align="center">
+  <img src="./charts/lag_profiles_core_signals.png" width="800" alt="Distributed Lag Profiles" />
+</p>
 
 After the broad screen, we moved to a smaller core study. The distributed lag profiles made timing explicit: does the candidate lead TSA volume, move at the same time, or trail it?
 
-![Pearson vs. Spearman Agreement](charts/pearson_spearman_comparison.png)
+<!-- ![Pearson vs. Spearman Agreement](charts/pearson_spearman_comparison.png) -->
+
+<p align="center">
+  <img src="./charts/pearson_spearman_comparison.png" width="800" alt="Pearson vs. Spearman Agreement" />
+</p>
 
 Pearson and Spearman agreement gave a second robustness check. When both point in the same direction around the same lag, the signal is less likely to be driven by a few extreme observations.
 
@@ -167,18 +191,53 @@ Passing this study does not automatically make a candidate a production feature.
 
 ## Weather
 
-Under construction...
+Weather plays a meaningful role in air travel demand, especially under extreme conditions. Events such as snowstorms, heavy precipitation, or severe weather can lead to flight delays and cancellations, which directly reduce TSA passenger volume. Because of this, incorporating weather data into the model helps capture short-term disruptions that are not explained by calendar effects alone.
 
-**TL;DR.** 
+To account for this, we integrated both **historical weather data** and **forecasted weather data** using an external API. This allows the model to learn from past weather patterns while also making forward-looking predictions. From this data, we constructed the following core weather features:
 
-...
+- `WTH_01_Atlas`
+- `WTH_02_Helios`
+- `WTH_03_Ursa`
+- `WTH_04_Athena`
+- `WTH_05_Apollo`
+- `WTH_06_Persephone`
 
-At a high level, weather is a different kind of signal from search data. Google Trends is mostly a demand/planning proxy; weather is more of a disruption proxy. The final version should explain what was tested, what survived, and how the surviving weather features fit into the broader forecasting pipeline.
+In addition to the base features, we also included **lagged and forward-shifted versions** (lags/leads) to capture delayed or persistent impacts of weather on travel behavior.
 
 <details>
 <summary><i>Expand Weather Analysis</i></summary>
 
-Under construction...
+## Correlation Analysis
+![Correlation Analysis](./charts/01_correlation_bars.png)
+
+To understand the relationship between weather and TSA volume, we analyzed both **Pearson (linear)** and **Spearman (rank-based)** correlations.
+
+### Key Observations:
+- All weather features show **consistent negative correlations** with TSA volume  
+- After adjusting for calendar effects, correlations are around **-0.10 to -0.13**
+- This indicates that **worse weather is associated with lower passenger volume**
+
+While these correlations are not large, they are:
+- **Stable across features**
+- **Consistent in direction**
+- Present in both Pearson and Spearman metrics  
+
+This consistency suggests that weather has a **real impact** on travel volume.
+
+## Scatter Plot Analysis
+![Scatter Plot Analysis](./charts/02_scatter_matrix.png)
+
+We also plotted each weather feature against **calendar-adjusted TSA volume**, along with a line of best fit.
+
+### What this shows:
+- The **negative slope** across all features confirms the inverse relationship  
+- Most data points are clustered near low weather values, meaning:
+  - Normal weather has little effect  
+  - **Extreme weather drives the impact**
+- A small number of high-weather-intensity days correspond to **notable drops in volume**
+
+### Interpretation:
+Weather does not strongly affect travel on a typical day, but during extreme conditions, it can significantly reduce passenger volume. This results in an overall weak correlation, even though the effect is meaningful in specific scenarios.
 
 </details>
 
@@ -186,17 +245,96 @@ Under construction...
 
 ## Model Performance
 
-![Model Performance Leaderboard](charts/model_performance_leaderboard.png)
+<!-- ![Model Performance Leaderboard](charts/model_performance_leaderboard.png) -->
+
+<p align="center">
+  <img src="./charts/model_performance_leaderboard.png" width="900" alt="Model Performance Leaderboard" />
+</p>
+
+<details>
+<summary><i>Model Fun Facts</i></summary>
+
+> Google Trends and weather are not the only features we've collected and engineered. We've actually collected and generated quite a few bringing one of our models' datasets to to around 6021 rows and 610 columns... 😬
+
+> Ensamlbe approaches is one method to improve model performance. One ensamble consist of over 20 models totaling to ~105M parameters and ~4GB on disk.
+
+> One of our production training runs starting with, evaluation, calibrating, and final training took around 30 hours on a 3070ti...
+
+</details>
 
 This is the running model leaderboard for our team. Lower Daily MAE is better and MAPE and Weekly MAE are supporting diagnostics when they are available. These models span the work done by the team for about one and a half semesters.
-
-> [!NOTE] TALON is still in development and being auditted for possible overfitting
 
 We also developed an internal backtester to test each model. The models we use for backtesting are completely seperate and trained on a truncated data set. This ensures theres no leakage or overfitting when preforming inference on the test set. We also made sure to account for all platform fees, real world liquidty constraints, and built it all ontop of historical Kalshi candle data for all the realism.
 
 We test mutliple different strategies that each all handle risk and position sizing differently. At a high level, we use a custom Kelly criterion model around the predicted probabilities, which we get from our autocorrelation-scaled variance model—which dynamically updates our daily standard deviation🤓— to determine position sizing. For clarification, each line on the graph below represent a different trading strategy across our top preforming models.
 
+We did of course try Kelly Criterion, customized to our situation, but found it to preform not poorly, but slowly if that makes sense, in our backtests. So we moved on to other strategies that granted us more consistent returns at around a 92% winrate on the backtest.
+
 _Again, our buying strategies are anonymized to protect our edge._
+
+<details>
+<summary><i>Quarter Kelly Criterion</i></summary>
+
+This was one our first strategies developed.
+
+Let:
+
+- `p_above` = model probability that the event finishes **above** the threshold
+- `p_below` = model probability that the event finishes **below** the threshold
+- `c_yes` = market price of the **Yes** contract
+- `c_no` = market price of the **No** contract
+- `f*` = full Kelly fraction of bankroll
+- `f_q` = quarter Kelly fraction of bankroll
+
+### 1. If the model thinks **Yes** is underpriced
+
+If the model probability for **Yes** is greater than the market price,
+
+$$
+p_{\text{above}} > c_{\text{yes}}
+$$
+
+then the full Kelly fraction for buying **Yes** is
+
+$$
+f^*_{\text{yes}} = \frac{p_{\text{above}} - c_{\text{yes}}}{1 - c_{\text{yes}}}
+$$
+
+and the quarter-Kelly size is
+
+$$
+f_{q,\text{yes}} = 0.25 \cdot f^*_{\text{yes}}
+$$
+
+### 2. If the model thinks **No** is underpriced
+
+If the model probability for **No** is greater than the market price of the **No** contract,
+
+$$
+p_{\text{below}} > c_{\text{no}}
+$$
+
+then the full Kelly fraction for buying **No** is
+
+$$
+f^*_{\text{no}} = \frac{p_{\text{below}} - c_{\text{no}}}{1 - c_{\text{no}}}
+$$
+
+and the quarter-Kelly size is
+
+$$
+f_{q,\text{no}} = 0.25 \cdot f^*_{\text{no}}
+$$
+
+### 3. Trading rule
+
+For each market:
+
+- compute the Kelly fraction for the side we believe is underpriced
+- take only **25% of the full Kelly size**
+- do not trade if the computed Kelly fraction is negative or too small after filters
+
+</details>
 
 ![Bankroll Race](charts/bankroll_race.gif)
 
