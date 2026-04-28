@@ -260,6 +260,7 @@ Weather does not strongly affect travel on a typical day, but during extreme con
 
 > One of our production training runs starting with, evaluation, calibrating, and final training took around 30 hours on a 3070ti...
 
+
 </details>
 
 This is the running model leaderboard for our team. Lower Daily MAE is better and MAPE and Weekly MAE are supporting diagnostics when they are available. These models span the work done by the team for about one and a half semesters.
